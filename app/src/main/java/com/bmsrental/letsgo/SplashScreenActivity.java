@@ -1,22 +1,39 @@
 package com.bmsrental.letsgo;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.bmsrental.letsgo.common.Common;
 import com.firebase.ui.auth.AuthMethodPickerLayout;
 import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.IdpResponse;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.UserInfo;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import io.reactivex.Completable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.Action;
@@ -26,6 +43,12 @@ public class SplashScreenActivity extends AppCompatActivity {
     private List<AuthUI.IdpConfig> providers;
     private FirebaseAuth firebaseAuth;
     private FirebaseAuth.AuthStateListener listener;
+    private FirebaseDatabase database;
+    private DatabaseReference userRef;
+
+
+    @BindView(R.id.progress_bar)
+    ProgressBar progressBar;
 
     @Override
     protected void onStart() {
@@ -44,12 +67,16 @@ public class SplashScreenActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_splash_screen);
         init();
 
 
     }
 
     private void init() {
+        ButterKnife.bind(this);
+        database = FirebaseDatabase.getInstance();
+        userRef = database.getReference(Common.USER_INFO_REF);
         providers = Arrays.asList(
                 new AuthUI.IdpConfig.PhoneBuilder().build(),
                 new AuthUI.IdpConfig.GoogleBuilder().build()
@@ -58,12 +85,73 @@ public class SplashScreenActivity extends AppCompatActivity {
         listener = myFirebaseAuth ->{
             FirebaseUser user = myFirebaseAuth.getCurrentUser();
             if (user!=null){
-                Toast.makeText(this, "Welcome "+user.getUid(), Toast.LENGTH_SHORT).show();
+                {
+                    checkUserFromFirebase();
+                }
 
             }else {
                 showLoginLayout();
             }
         };
+
+    }
+
+    private void checkUserFromFirebase() {
+
+        userRef.child(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (snapshot.exists()){
+                            Toast.makeText(SplashScreenActivity.this, "User Already Exist", Toast.LENGTH_SHORT).show();
+
+                        }else {
+                            showRegisterLayout();
+
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+
+                        Toast.makeText(SplashScreenActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+    }
+
+    private void showRegisterLayout() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this,R.style.DialogTheme);
+        View itemView = LayoutInflater.from(this).inflate(R.layout.layout_register,null);
+
+        TextInputEditText ed_first_name = itemView.findViewById(R.id.ed_first_name);
+        TextInputEditText ed_last_name = itemView.findViewById(R.id.ed_last_name);
+        TextInputEditText ed_phone_number = itemView.findViewById(R.id.edit_phone_number);
+
+        Button btn_continue = itemView.findViewById(R.id.btnRegister);
+
+        if (FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber()!=null && !TextUtils.isEmpty(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber()))
+            ed_phone_number.setText(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber());
+
+        builder.setView(itemView);
+        AlertDialog dialog =  builder.create();
+        dialog.show();
+
+        btn_continue.setOnClickListener(view -> {
+            if (TextUtils.isEmpty(ed_first_name.getText().toString())){
+                ed_first_name.setError("First Name Required!");
+            }
+            else if (TextUtils.isEmpty(ed_last_name.getText().toString())){
+                ed_last_name.setError("Last Name Required!");
+            }
+            else if (TextUtils.isEmpty(ed_first_name.getText().toString())){
+                ed_phone_number.setError("Phone Number Required!");
+            }
+            else {
+                
+            }
+
+        });
 
     }
 
@@ -85,6 +173,8 @@ public class SplashScreenActivity extends AppCompatActivity {
     }
 
     private void delaySplashScreen() {
+        progressBar.setVisibility(View.VISIBLE);
+
         Completable.timer(5, TimeUnit.SECONDS,
                 AndroidSchedulers.mainThread())
                 .subscribe(() ->
