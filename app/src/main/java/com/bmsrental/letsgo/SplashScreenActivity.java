@@ -15,9 +15,12 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.bmsrental.letsgo.common.Common;
+import com.bmsrental.letsgo.model.DriverInfoModel;
 import com.firebase.ui.auth.AuthMethodPickerLayout;
 import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.IdpResponse;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -103,7 +106,9 @@ public class SplashScreenActivity extends AppCompatActivity {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                         if (snapshot.exists()){
-                            Toast.makeText(SplashScreenActivity.this, "User Already Exist", Toast.LENGTH_SHORT).show();
+//                            Toast.makeText(SplashScreenActivity.this, "User Already Exist", Toast.LENGTH_SHORT).show();
+                            DriverInfoModel driverInfoModel = snapshot.getValue(DriverInfoModel.class);
+                            gotoHomeActivity(driverInfoModel);
 
                         }else {
                             showRegisterLayout();
@@ -118,6 +123,12 @@ public class SplashScreenActivity extends AppCompatActivity {
                     }
                 });
 
+    }
+
+    private void gotoHomeActivity(DriverInfoModel driverInfoModel) {
+        Common.currentUser = driverInfoModel;
+        startActivity(new Intent(SplashScreenActivity.this, DriverActivity.class));
+        finish();
     }
 
     private void showRegisterLayout() {
@@ -148,9 +159,30 @@ public class SplashScreenActivity extends AppCompatActivity {
                 ed_phone_number.setError("Phone Number Required!");
             }
             else {
-                
-            }
+                DriverInfoModel driverInfoModel = new DriverInfoModel();
+                driverInfoModel.setFirst_name(ed_first_name.getText().toString());
+                driverInfoModel.setLast_name(ed_last_name.getText().toString());
+                driverInfoModel.setPhone_number(ed_phone_number.getText().toString());
+                driverInfoModel.setRatting(0.0);
 
+                userRef.child(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                        .setValue(driverInfoModel)
+                        .addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                dialog.dismiss();
+                                Toast.makeText(SplashScreenActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        }).addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        dialog.dismiss();
+                        Toast.makeText(SplashScreenActivity.this, "Register successfully....", Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
+                        gotoHomeActivity(driverInfoModel);
+                    }
+                });
+            }
         });
 
     }
@@ -168,17 +200,12 @@ public class SplashScreenActivity extends AppCompatActivity {
                 .setTheme(R.style.LoginTheme)
         .setAvailableProviders(providers)
         .build(),LOGIN_REQUEST_CODE);
-
-
     }
-
     private void delaySplashScreen() {
         progressBar.setVisibility(View.VISIBLE);
-
         Completable.timer(5, TimeUnit.SECONDS,
                 AndroidSchedulers.mainThread())
                 .subscribe(() ->
-
                         firebaseAuth.addAuthStateListener(listener));
     }
 
