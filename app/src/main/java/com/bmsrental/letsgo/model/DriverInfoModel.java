@@ -1,7 +1,7 @@
 package com.bmsrental.letsgo.model;
 
 public class DriverInfoModel {
-    public String first_name, last_name, phone_number;
+    public String first_name, last_name, phone_number,avatar;
     public double ratting;
 
     public DriverInfoModel() {
@@ -44,5 +44,13 @@ public class DriverInfoModel {
 
     public double getRatting() {
         return ratting;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 }

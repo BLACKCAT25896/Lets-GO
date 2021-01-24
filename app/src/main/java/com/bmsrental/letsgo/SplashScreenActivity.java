@@ -48,6 +48,7 @@ public class SplashScreenActivity extends AppCompatActivity {
     private FirebaseAuth.AuthStateListener listener;
     private FirebaseDatabase database;
     private DatabaseReference userRef;
+    private String fName, lName, phone;
 
 
     @BindView(R.id.progress_bar)
@@ -159,11 +160,17 @@ public class SplashScreenActivity extends AppCompatActivity {
                 ed_phone_number.setError("Phone Number Required!");
             }
             else {
+//                fName = ed_first_name.getText().toString();
+//                lName = ed_last_name.getText().toString();
+//                phone = ed_phone_number.getText().toString();
+
                 DriverInfoModel driverInfoModel = new DriverInfoModel();
                 driverInfoModel.setFirst_name(ed_first_name.getText().toString());
                 driverInfoModel.setLast_name(ed_last_name.getText().toString());
                 driverInfoModel.setPhone_number(ed_phone_number.getText().toString());
                 driverInfoModel.setRatting(0.0);
+
+
 
                 userRef.child(FirebaseAuth.getInstance().getCurrentUser().getUid())
                         .setValue(driverInfoModel)

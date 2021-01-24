@@ -12,7 +12,7 @@ public class Common {
             return new StringBuilder("Welcome ")
                     .append(Common.currentUser.getFirst_name())
                     .append(" ")
-                    .append(Common.currentUser.last_name)
+                    .append(Common.currentUser.getLast_name())
                     .toString();
 
         }
