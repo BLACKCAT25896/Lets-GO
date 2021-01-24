@@ -203,7 +203,7 @@ public class SplashScreenActivity extends AppCompatActivity {
     }
     private void delaySplashScreen() {
         progressBar.setVisibility(View.VISIBLE);
-        Completable.timer(5, TimeUnit.SECONDS,
+        Completable.timer(3, TimeUnit.SECONDS,
                 AndroidSchedulers.mainThread())
                 .subscribe(() ->
                         firebaseAuth.addAuthStateListener(listener));
